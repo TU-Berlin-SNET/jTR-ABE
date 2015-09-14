@@ -1,0 +1,40 @@
+<project name="JCPABEParser" default="gen" basedir=".">
+	<description>
+		Builds the parser for jCPABE
+	</description>
+
+	<property name="javacc.home" value="javacc/" />
+	<property name="res.dir" location="src/main/resources/" />
+	<property name="gen.dir" location="src/gen/java/" />
+	<property name="tmp.dir" location="./tmp" />
+	<!-- if the package name is modified change the packages of the java files 
+		in the resource directory (and in the jjt file) -->
+	<property name="parser.package" value="trabe.policyparser" />
+	<property name="package.dir" location="${gen.dir}/trabe/policyparser" />
+
+	<target name="init">
+		<delete dir="${package.dir}" />
+		<mkdir dir="${package.dir}" />
+	</target>
+
+	<target name="gen" depends="init">
+		<delete dir="${tmp.dir}" />
+		<mkdir dir="${tmp.dir}" />
+		<copy todir="${tmp.dir}">
+			<fileset dir="${res.dir}" />
+		</copy>
+		<jjtree target="${tmp.dir}/policyTree.jjt" outputdirectory="${tmp.dir}"
+			javacchome="${javacc.home}" nodepackage="${parser.package}" />
+		<javacc target="${tmp.dir}/policyTree.jj" outputdirectory="${tmp.dir}"
+			javacchome="${javacc.home}" />
+		<copy todir="${package.dir}">
+			<fileset dir="${tmp.dir}" excludes="**/*.jjt **/*.jj" />
+		</copy>
+		<delete dir="${tmp.dir}" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${package.dir}" />
+		<delete dir="${tmp.dir}" />
+	</target>
+</project>

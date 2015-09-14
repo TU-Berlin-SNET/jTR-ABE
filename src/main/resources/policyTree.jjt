@@ -1,0 +1,135 @@
+/* policy.jjt */
+
+options {
+    STATIC = false;
+    MULTI = true;
+}
+
+PARSER_BEGIN(PolicyParser)
+package trabe.policyparser;
+    import java.io.Reader;
+    import java.io.StringReader;
+
+    public class PolicyParser {
+        public static void main(String[] args) throws ParseException, TokenMgrError {
+            PolicyParser parser = new PolicyParser( System.in );
+            ASTStart ast = parser.Start();
+            ast.dump("");
+        }
+        
+        public static ASTStart parsePolicy(String input) throws ParseException, TokenMgrError {
+            Reader reader = new StringReader(input);
+            PolicyParser parser = new PolicyParser(reader);
+            return parser.Start();
+        }
+    }
+PARSER_END(PolicyParser)
+
+SKIP : { " " | "\t" }
+SKIP : { "\n" | "\r" | "\r\n" }
+
+/* TOKEN : { < OPEN_PAR : "(" > } */
+/* TOKEN : { < CLOSE_PAR : ")" > } */
+
+TOKEN : { < OR : "or" | "OR" > }
+TOKEN : { < AND : "and" | "AND" > }
+TOKEN : { < OF : "of" | "OF" > }
+TOKEN : { < COMMA : "," > }
+
+TOKEN : { < OP : <GEQ> | <LEQ> | <EQ> | <LT> | <GT> > }
+TOKEN : { < #GEQ : ">=" > }
+TOKEN : { < #LEQ : "<=" > }
+TOKEN : { < #EQ : "=" > }
+TOKEN : { < #LT : "<" > }
+TOKEN : { < #GT : ">" > }
+
+TOKEN : { < ATTNAME : <LETTER>(<LETTERDIGIT>)* > }
+TOKEN : { < NUMBER : (<DIGIT>)+ > }
+TOKEN : { < DOUBLE : ("-")?(<DIGIT>)+(".")?(<DIGIT>)* > }
+
+TOKEN : { < #LETTER : ["a"-"z", "A"-"Z"] > }
+TOKEN : { < #DIGIT : ["0"-"9"] > }
+TOKEN : { < #LETTERDIGIT : <LETTER> | <DIGIT> | "_" > }
+
+ASTStart Start() :
+{}
+{
+    Expression() (";" | <EOF>)
+    { return jjtThis; }
+}
+
+void Expression() #void :
+{
+    Token t = null;
+}
+{
+    (
+    UnaryPolicy()
+    ((t = <OR>  { jjtThis.setType(t.image); }
+    | t = <AND> { jjtThis.setType(t.image); } ) 
+    UnaryPolicy())*
+    ) #Expression(>1)
+}
+
+void UnaryPolicy() #void :
+{}
+{
+    Attribute() | "(" Expression() ")" | Of()
+}
+
+void Of() :
+{
+    Token t;
+}
+{
+    t = <NUMBER>
+    <OF>
+    "(" 
+    Expression()
+    (<COMMA> Expression())*
+    ")"
+    { jjtThis.setNumber(t.image); }
+    
+}
+
+void Attribute() #void :
+{
+    Token att;
+}
+{
+    (
+    att = <ATTNAME>
+    [ NumericalAttribute(att) | GeoHashAttribute(att)]
+    { jjtThis.setName(att.image); }
+    ) #Attribute(jjtree.nodeArity() < 1)
+} 
+
+void NumericalAttribute(Token name) :
+{
+	Token op;
+	Token value;
+}
+{
+	op = <OP>
+	value = <NUMBER>
+	{ jjtThis.setValues(name.image, op.image, value.image); }
+}
+
+void GeoHashAttribute(Token name) :
+{
+	Token lat;
+	Token lon;
+	Token precision;
+	Token approach;
+}
+{
+    ":"
+    lat = <DOUBLE>
+    ":"
+    lon = <DOUBLE>
+    ":"
+    precision = <NUMBER>
+    ":"
+    approach = <NUMBER>
+    { jjtThis.setValues(name.image, lon.image, lat.image, precision.image, approach.image); }
+}
