@@ -39,10 +39,6 @@ public class Lw14 {
 
     private static final String ATTRIBUTE_NOT_FOUND     = "an attribute was not found in the source private key";
     private static final String ATTRIBUTES_DONT_SATISFY = "decryption failed: attributes in key do not satisfy policy";
-    private static final boolean USE_TREE = true; // otherwise LSSS matrix
-
-    // currently broken:
-    private static final boolean USE_THRESHOLD_MATRIX = false; // otherwise LSSS matrix from boolean formula
 
     /**
      * Generate a secret master key. The public master key is part of the secret master key.
@@ -217,9 +213,9 @@ public class Lw14 {
 
         String parsedPolicy = null;
         LsssMatrix accessStructure;
-        if (!USE_TREE) {
+        if (!AbeSettings.USE_TREE) {
             try {
-                if (!USE_THRESHOLD_MATRIX) {
+                if (!AbeSettings.USE_THRESHOLD_MATRIX) {
                     accessStructure = LsssMatrix.createMatrixFromBooleanFormula(policy, pub);
                 } else {
                     // the threshold formula doesn't work for some reason
@@ -351,7 +347,7 @@ public class Lw14 {
         }
 
         CipherText ct;
-        if (!USE_TREE) {
+        if (!AbeSettings.USE_TREE) {
             int n = accessStructure.getColumns();
             int l = accessStructure.getAttributes();
 

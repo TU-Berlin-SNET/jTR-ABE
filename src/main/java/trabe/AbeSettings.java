@@ -13,4 +13,8 @@ public class AbeSettings {
             + "r 730750818665451621361119245571504901405976559617\n"
             + "exp2 159\n" + "exp1 107\n"
             + "sign1 1\n" + "sign0 1\n";
+    public final static boolean USE_TREE = true; // otherwise LSSS matrix
+
+    // currently broken:
+    public final static boolean USE_THRESHOLD_MATRIX = false; // otherwise LSSS matrix from boolean formula
 }
