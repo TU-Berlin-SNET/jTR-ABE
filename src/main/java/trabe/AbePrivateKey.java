@@ -89,7 +89,7 @@ public class AbePrivateKey {
     }
 
     /**
-     * Return the attributes of the matrix.
+     * Return the attributes of the matrix (LSSS approach).
      * @return  Attributes in the matrix
      */
     public Set<String> getAttributeSet() {
@@ -105,6 +105,12 @@ public class AbePrivateKey {
     	return components;
     }
 
+    /**
+     * Finds the key component by attribute. This is of the LSSS approach which
+     * needs access to the attribute string directly.
+     * @param attribute    Attribute string
+     * @return  Attribute component
+     */
     public Lw14PrivateKeyComponent getComponent(String attribute) {
         for(Lw14PrivateKeyComponent c : components){
             if (attribute.equals(c.attribute)) {
