@@ -9,6 +9,7 @@ import it.unisa.dia.gas.jpbc.Element;
 import trabe.lw14.Lw14Util;
 
 public class AbePrivateKey {
+    private static final int SERIALIZE_VERSION = 1;
 
     public final AbeUserIndex position;
 
@@ -23,6 +24,11 @@ public class AbePrivateKey {
     private final ArrayList<Lw14PrivateKeyComponent> components;
     private final AbePublicKey pubKey;
 
+    /**
+     * Also known as secret seed. This is the seed on the client that can be used
+     * to seed a PRNG for generating common parameters on client and authority
+     * without further communication.
+     */
     public byte[] commonSecret = null;
 
     public AbePrivateKey(AbeUserIndex position,
@@ -157,6 +163,7 @@ public class AbePrivateKey {
     }
 
     public static AbePrivateKey readFromStream(AbeInputStream stream) throws IOException {
+        int version = stream.readInt();
         AbePublicKey pubKey = AbePublicKey.readFromStream(stream);
         stream.setPublicKey(pubKey);
         int m = stream.readInt();
@@ -201,6 +208,7 @@ public class AbePrivateKey {
     }
 
     public void writeToStream(AbeOutputStream stream) throws IOException {
+        stream.writeInt(SERIALIZE_VERSION);
         pubKey.writeToStream(stream);
         stream.writeInt(position.m);
         stream.writeInt(position.counter);

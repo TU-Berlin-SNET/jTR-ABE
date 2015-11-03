@@ -11,6 +11,8 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.parameters.PropertiesParameters;
 import trabe.lw14.Lw14Util;
 
 public class AbePublicKey {
+    private static final int SERIALIZE_VERSION = 1;
+
     /*
      * A public key
      */
@@ -87,6 +89,8 @@ public class AbePublicKey {
     }
 
     public static AbePublicKey readFromStream(AbeInputStream stream) throws IOException {
+        int version = stream.readInt();
+
         String pairingDescription = stream.readString();
         AbePublicKey publicKey = new AbePublicKey(pairingDescription);
         stream.setPublicKey(publicKey);
@@ -113,6 +117,8 @@ public class AbePublicKey {
     }
 
     public void writeToStream(AbeOutputStream stream) throws IOException {
+        stream.writeInt(SERIALIZE_VERSION);
+
         stream.writeString(pairingDesc);
 
         stream.writeInt(f_j.length);

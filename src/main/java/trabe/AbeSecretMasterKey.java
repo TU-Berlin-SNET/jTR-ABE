@@ -16,6 +16,7 @@ import trabe.lw14.Lw14Util;
  * A master secret key
  */
 public class AbeSecretMasterKey {
+    private static final int SERIALIZE_VERSION = 1;
 
     private final AbePublicKey pubKey;
     /** [Zr] **/
@@ -48,6 +49,8 @@ public class AbeSecretMasterKey {
     }
     
     private static AbeSecretMasterKey readFromStream(AbeInputStream stream) throws IOException {
+        int version = stream.readInt();
+
         AbePublicKey pubKey = AbePublicKey.readFromStream(stream);
         //stream.setPublicKey(pubKey);
 
@@ -91,6 +94,8 @@ public class AbeSecretMasterKey {
     }
     
     public void writeToStream(AbeOutputStream stream) throws IOException {
+        stream.writeInt(SERIALIZE_VERSION);
+
         pubKey.writeToStream(stream);
 
         stream.writeInt(getSqrtUsers());

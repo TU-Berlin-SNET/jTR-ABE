@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class CipherText {
+    private static final int SERIALIZE_VERSION = 1;
 
     public LsssMatrix accessMatrix = null;
     public Lw14PolicyAbstractNode accessTree = null;
@@ -84,6 +85,8 @@ public class CipherText {
     }
 
     public void writeToStream(AbeOutputStream stream) throws IOException {
+        stream.writeInt(SERIALIZE_VERSION);
+
         boolean isAccessStructure = isAccessMatrix();
         stream.writeBoolean(isAccessStructure);
         if (isAccessStructure) {
@@ -148,6 +151,8 @@ public class CipherText {
     }
 
     public static CipherText readFromStream(AbeInputStream stream) throws IOException {
+        int version = stream.readInt();
+
         CipherText ct = new CipherText();
 
         boolean isAccessStructure = stream.readBoolean();
