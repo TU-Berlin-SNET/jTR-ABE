@@ -575,13 +575,14 @@ public class Lw14Test {
                 assertTrue(Arrays.equals(data, plaintext));
 
                 boolean exceptionThrown = false;
+                plaintext = new byte[0];
                 try {
                     plaintext = Cpabe.decrypt(privateKeyRevoked, AbeEncrypted.read(ciphertextCopy, msk.getPublicKey()));
                 } catch (DecryptionException e) {
                     exceptionThrown = true;
                 }
+                assertFalse(Arrays.equals(data, plaintext));
                 assertTrue(exceptionThrown);
-//                assertFalse(Arrays.equals(data, plaintext));
 
                 plaintext = Cpabe.decrypt(privateKeyNonRevoked2, AbeEncrypted.read(ciphertextCopy, msk.getPublicKey()));
                 assertNotNull(plaintext);

@@ -104,7 +104,10 @@ public class CipherText {
             Lw14Util.writeArray(p2, stream);
             Lw14Util.writeArray(p3, stream);
         }
-        stream.writeString(policy);
+        stream.writeBoolean(policy != null);
+        if (policy != null) {
+            stream.writeString(policy);
+        }
         Lw14Util.writeArray(revokedUserIndexes, stream);
     }
 
@@ -138,7 +141,7 @@ public class CipherText {
         result = result && Arrays.equals(p1, c.p1);
         result = result && Arrays.equals(p2, c.p2);
         result = result && Arrays.equals(p3, c.p3);
-        result = result && policy.equals(c.policy);
+        result = result && ((policy == null && c.policy == null) || (policy != null && policy.equals(c.policy)));
         result = result && Arrays.equals(revokedUserIndexes, c.revokedUserIndexes);
 
         return result;
@@ -167,7 +170,9 @@ public class CipherText {
             ct.p2 = Lw14Util.readElementArray(stream);
             ct.p3 = Lw14Util.readElementArray(stream);
         }
-        ct.policy = stream.readString();
+        if (stream.readBoolean()) {
+            ct.policy = stream.readString();
+        }
         ct.revokedUserIndexes = Lw14Util.readIntegerArray(stream);
 
         return ct;

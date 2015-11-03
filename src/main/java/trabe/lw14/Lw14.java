@@ -380,7 +380,7 @@ public class Lw14 {
             policyTree.fillPolicy(pub, pi);
 
             ct = new CipherText(policyTree, R1_i, R2_i, Q1_i, Q2_i, Q3_i, T_i,
-                    C1_j, C2_j, policy, revokedUserIndexes);
+                    C1_j, C2_j, null, revokedUserIndexes);
         }
 
 //        System.out.println("encrypted msg: " + message);
@@ -400,11 +400,17 @@ public class Lw14 {
     public static Element decrypt(AbePrivateKey privateKey, CipherText cipher) throws AbeDecryptionException {
         Lw14PolicyAbstractNode root = null;
         try {
-            root = Lw14Util.getPolicyTree(cipher.policy, privateKey.getPublicKey());
+            if (cipher.accessTree != null) {
+                root = cipher.accessTree;
+            } else if (cipher.policy != null) {
+                throw new AbeDecryptionException("No policy available in order to check satisfiability");
+            } else {
+                root = Lw14Util.getPolicyTree(cipher.policy, privateKey.getPublicKey());
+            }
             if (!Lw14Util.satisfies(root, privateKey)) {
                 return null;
             }
-        } catch(ParseException e){
+        } catch(ParseException e) {
             throw new AbeDecryptionException("Policy could not be parsed", e);
         }
 
@@ -556,7 +562,14 @@ public class Lw14 {
     }
     
     public static boolean canDecrypt(AbePrivateKey prv, CipherText cph) throws ParseException {
-    	return canDecrypt(prv, cph.policy);
+        if (cph.accessTree != null) {
+            return cph.accessTree.checkSatisfy(prv);
+        } else if (cph.policy != null) {
+            return canDecrypt(prv, cph.policy);
+        } else {
+            throw new ParseException("Unable to check satisfiability through private key, " +
+                    "because either policy tree or policy string are missing");
+        }
     }
 
     /**
