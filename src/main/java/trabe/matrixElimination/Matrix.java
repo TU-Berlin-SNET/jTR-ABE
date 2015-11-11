@@ -1,11 +1,12 @@
-package trabe.matrixElimination;/*
+/*
  * Gauss-Jordan elimination over any field (Java)
- * 
+ *
  * Copyright (c) 2014 Project Nayuki
- * All rights reserved. Contact Nayuki for licensing.
+ * Used with permission. Contact Nayuki for licensing.
  * http://www.nayuki.io/page/gauss-jordan-elimination-over-any-field-java
  */
 
+package trabe.matrixElimination;
 
 public final class Matrix<T> implements Cloneable {
 	
