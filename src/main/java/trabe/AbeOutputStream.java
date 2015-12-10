@@ -17,6 +17,14 @@ public class AbeOutputStream extends DataOutputStream {
     }
 
     // only used for the curve parameters and attributes, no need for fancy encodings
+
+    /**
+     * Writes a string to the stream with the locale specified in
+     * {@link AbeSettings#STRINGS_LOCALE} and prepends the length of the
+     * serialized bytes.
+     * @param string    String to write
+     * @throws IOException see {@link #write(byte[])}
+     */
     public void writeString(String string) throws IOException {
         byte[] bytes = string.getBytes(AbeSettings.STRINGS_LOCALE);
         writeInt(bytes.length);

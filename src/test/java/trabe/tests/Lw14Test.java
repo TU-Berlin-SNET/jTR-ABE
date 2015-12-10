@@ -775,4 +775,28 @@ public class Lw14Test {
         assertFalse(Arrays.equals(data, decrypt(schwerinKey, berlinEncryptedTest3)));
         assertFalse(Arrays.equals(data, decrypt(schwerinKey, hamburgEncryptedTest3)));
     }
+
+    @Test
+    public void testAdditionalDataInPrivateKey() throws Exception {
+        AbeSecretMasterKey smKey = Cpabe.setup(3);
+        AbePublicKey pubKey = smKey.getPublicKey();
+
+        AbePrivateKey sk = Cpabe.keygenSingle(smKey, "a");
+        assertNull(sk.getAdditionalData("a"));
+
+        byte[] data = new byte[]{ 1, 2, 3, 7, 8};
+        sk.setAdditionalData("data", data);
+
+        assertArrayEquals(sk.getAdditionalData("data"), data);
+
+        AbePrivateKey serializedDeserialized = AbePrivateKey.readFromByteArray(sk.getAsByteArray());
+
+        assertEquals(sk, serializedDeserialized);
+        assertArrayEquals(serializedDeserialized.getAdditionalData("data"), data);
+
+        AbePrivateKey cloned = sk.duplicate();
+
+        assertEquals(sk, cloned);
+        assertArrayEquals(cloned.getAdditionalData("data"), data);
+    }
 }
