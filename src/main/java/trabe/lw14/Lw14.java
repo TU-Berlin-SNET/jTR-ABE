@@ -161,11 +161,10 @@ public class Lw14 {
         for(String attribute : attributes) {
             Element delta =  p.getZr().newRandomElement();
             Element x = Lw14Util.elementZrFromString(attribute, pub);
-            Element xG1 = Lw14Util.elementG1FromString(attribute, pub);
             Element k1_ijx = pub.g.duplicate().powZn(delta);
             Element k2_ijx = pub.H.duplicate().powZn(x).mul(pub.h).powZn(delta)
                     .mul(pub.G.duplicate().powZn(sigma).invert());
-            components.add(new Lw14PrivateKeyComponent(attribute, xG1, x, k1_ijx, k2_ijx));
+            components.add(new Lw14PrivateKeyComponent(attribute, x, k1_ijx, k2_ijx));
         }
         return components;
     }

@@ -8,8 +8,7 @@ import java.io.IOException;
 
 public class Lw14PrivateKeyComponent {
     /* these actually get serialized */
-    /** G_1 **/
-    public Element hashedAttributeG1;
+
     /** Z_r **/
     public Element hashedAttributeZr;
     public String attribute;
@@ -20,9 +19,8 @@ public class Lw14PrivateKeyComponent {
 
     private Lw14PrivateKeyComponent(){}
 
-    public Lw14PrivateKeyComponent(String attribute, Element hashedAttributeG1, Element hashedAttributeZr, Element k1_ijx, Element k2_ijx) {
+    public Lw14PrivateKeyComponent(String attribute, Element hashedAttributeZr, Element k1_ijx, Element k2_ijx) {
         this.attribute = attribute;
-        this.hashedAttributeG1 = hashedAttributeG1;
         this.hashedAttributeZr = hashedAttributeZr;
         this.k1_ijx = k1_ijx;
         this.k2_ijx = k2_ijx;
@@ -30,17 +28,18 @@ public class Lw14PrivateKeyComponent {
 
     public void writeToStream(AbeOutputStream stream) throws IOException {
         stream.writeString(attribute);
-        stream.writeElement(hashedAttributeG1);
         stream.writeElement(hashedAttributeZr);
         stream.writeElement(k1_ijx);
         stream.writeElement(k2_ijx);
     }
 
-    public static Lw14PrivateKeyComponent readFromStream(AbeInputStream stream) throws IOException {
+    public static Lw14PrivateKeyComponent readFromStream(AbeInputStream stream, int serializeVersion) throws IOException {
         Lw14PrivateKeyComponent component = new Lw14PrivateKeyComponent();
 
         component.attribute = stream.readString();
-        component.hashedAttributeG1 = stream.readElement();
+        if (serializeVersion < 3) {
+            stream.readElement();
+        }
         component.hashedAttributeZr = stream.readElement();
         component.k1_ijx = stream.readElement();
         component.k2_ijx = stream.readElement();

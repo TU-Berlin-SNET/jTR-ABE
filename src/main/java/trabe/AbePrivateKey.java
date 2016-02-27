@@ -9,7 +9,7 @@ import it.unisa.dia.gas.jpbc.Element;
 import trabe.lw14.Lw14Util;
 
 public class AbePrivateKey {
-    private static final int SERIALIZE_VERSION = 2;
+    private static final int SERIALIZE_VERSION = 3;
 
     public final AbeUserIndex position;
 
@@ -185,7 +185,7 @@ public class AbePrivateKey {
         ArrayList<Lw14PrivateKeyComponent> components = new ArrayList<Lw14PrivateKeyComponent>(compsLength);
 
         for (int i = 0; i < compsLength; i++) {
-            components.add(Lw14PrivateKeyComponent.readFromStream(stream));
+            components.add(Lw14PrivateKeyComponent.readFromStream(stream, version));
         }
         AbePrivateKey sk = new AbePrivateKey(new AbeUserIndex(m, counter), k1_ij, k2_ij, k3_ij, k_ijj,
                 components, pubKey);

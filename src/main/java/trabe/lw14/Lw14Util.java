@@ -169,7 +169,7 @@ public class Lw14Util {
     private static AbePrivateKey mockPrivateKey(Set<String> attributes, AbePublicKey publicKey) {
         ArrayList<Lw14PrivateKeyComponent> components = new ArrayList<Lw14PrivateKeyComponent>();
         for (String s : attributes) {
-            components.add(new Lw14PrivateKeyComponent(s, null, elementZrFromString(s, publicKey), null, null));
+            components.add(new Lw14PrivateKeyComponent(s, elementZrFromString(s, publicKey), null, null));
         }
         return new AbePrivateKey(null, null, null, null, null, components, publicKey);
     }
