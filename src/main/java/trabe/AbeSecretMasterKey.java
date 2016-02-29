@@ -161,4 +161,8 @@ public class AbeSecretMasterKey {
         sb.append("\n}");
         return sb.toString();
     }
+
+    public static int getSerializeVersion() {
+        return SERIALIZE_VERSION;
+    }
 }

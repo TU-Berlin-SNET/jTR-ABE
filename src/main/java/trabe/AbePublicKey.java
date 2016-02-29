@@ -248,4 +248,8 @@ public class AbePublicKey {
         sb.append("\n}");
         return sb.toString();
     }
+
+    public static int getSerializeVersion() {
+        return SERIALIZE_VERSION;
+    }
 }

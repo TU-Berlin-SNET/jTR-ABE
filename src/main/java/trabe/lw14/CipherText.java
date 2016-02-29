@@ -198,4 +198,8 @@ public class CipherText {
             stream.close();
         }
     }
+
+    public static int getSerializeVersion() {
+        return SERIALIZE_VERSION;
+    }
 }

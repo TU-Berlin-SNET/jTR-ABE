@@ -1,7 +1,6 @@
 package trabe;
 
 import java.io.*;
-import java.security.SecureRandom;
 import java.util.*;
 
 import trabe.lw14.Lw14PrivateKeyComponent;
@@ -289,5 +288,9 @@ public class AbePrivateKey {
         }
 
         return result;
+    }
+
+    public static int getSerializeVersion() {
+        return SERIALIZE_VERSION;
     }
 }
