@@ -293,6 +293,10 @@ public class Lw14Test {
         vector.put("att1 att2 att3 att4", true);
         testVectors.put("2 of (att1, (att2 and att3), att4)", vector);
 
+        vector = new LinkedHashMap<String, Boolean>();
+        vector.put("a2of4 att2", true);
+        testVectors.put("2 of (a2of4, att2, att3)", vector);
+
         AbeSecretMasterKey msk = Cpabe.setup(100);
         // System.out.println("PK: " + Base64.toBase64String(msk.getPublicKey().getAsByteArray()));
 

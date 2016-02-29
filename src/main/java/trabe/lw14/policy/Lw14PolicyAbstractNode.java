@@ -3,6 +3,7 @@ package trabe.lw14.policy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import trabe.AbeInputStream;
 import trabe.AbeOutputStream;
@@ -57,12 +58,15 @@ public abstract class Lw14PolicyAbstractNode {
         }
     }
 
+    private static final String of = "^([0-9]+)of([0-9]+)$";
+    private static final Pattern ofPattern = Pattern.compile(of);
+
     public static Lw14PolicyAbstractNode parsePolicy(String s, AbePublicKey publicKey) throws ParseException {
         ArrayList<Lw14PolicyAbstractNode> stack = new ArrayList<Lw14PolicyAbstractNode>();
         String[] toks = s.split("\\s+");
         for (int index = 0; index < toks.length; index++) {
             String curToken = toks[index];
-            if (!curToken.contains("of")) {
+            if (!ofPattern.matcher(curToken).matches()) {
                 stack.add(new Lw14PolicyLeafNode(curToken, publicKey));
             } else {
                 String[] k_n = curToken.split("of"); /* parse kofn node */
