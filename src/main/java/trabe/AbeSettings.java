@@ -15,6 +15,9 @@ public class AbeSettings {
             + "sign1 1\n" + "sign0 1\n";
     public final static boolean USE_TREE = true; // otherwise LSSS matrix
 
+    public static boolean PREPROCESSING = true;
+    public static int PREPROCESSING_THRESHOLD = 6; // how many exponentiations with the same basis are needed for pre-processing to make sense
+
     // currently broken:
     public final static boolean USE_THRESHOLD_MATRIX = false; // otherwise LSSS matrix from boolean formula
 }

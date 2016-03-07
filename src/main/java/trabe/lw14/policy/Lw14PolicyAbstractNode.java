@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
+import it.unisa.dia.gas.jpbc.ElementPowPreProcessing;
 import trabe.AbeInputStream;
 import trabe.AbeOutputStream;
 import trabe.AbePrivateKey;
@@ -16,7 +17,13 @@ public abstract class Lw14PolicyAbstractNode {
     protected boolean satisfiable;
     protected int     minLeaves;
 
+    public int getMinLeaves() {
+        return minLeaves;
+    }
+
     public abstract void fillPolicy(AbePublicKey pub, Element e);
+
+    public abstract void fillPolicy(AbePublicKey pub, Element e, Lw14TreePreprocessing tpp);
 
     protected abstract boolean checkSatisfySpecific(AbePrivateKey prv);
 

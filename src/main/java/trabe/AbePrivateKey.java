@@ -3,6 +3,8 @@ package trabe;
 import java.io.*;
 import java.util.*;
 
+import it.unisa.dia.gas.jpbc.ElementPowPreProcessing;
+import it.unisa.dia.gas.jpbc.PairingPreProcessing;
 import trabe.lw14.Lw14PrivateKeyComponent;
 import it.unisa.dia.gas.jpbc.Element;
 import trabe.lw14.Lw14Util;
@@ -22,6 +24,8 @@ public class AbePrivateKey {
     public final Element[] k_ijj;
     private final ArrayList<Lw14PrivateKeyComponent> components;
     private final AbePublicKey pubKey;
+
+    public PairingPreProcessing k2_ij_pp = null;
 
     /**
      * Can be used to store additional information such as a secret seed or a

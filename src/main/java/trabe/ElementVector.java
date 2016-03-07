@@ -1,10 +1,8 @@
 package trabe;
 
+import it.unisa.dia.gas.jpbc.*;
 import trabe.lw14.Lw14Util;
 import trabe.lw14.policy.LsssMatrix;
-import it.unisa.dia.gas.jpbc.Element;
-import it.unisa.dia.gas.jpbc.Field;
-import it.unisa.dia.gas.jpbc.Pairing;
 
 import java.io.IOException;
 
@@ -180,6 +178,21 @@ public class ElementVector {
             vector[i].add(v.get(i));
         }
         return this;
+    }
+
+    /**
+     * Raises the passed base element to each of the current vector's components
+     * to produce a new vector. Duplication is not necessary. The base vector
+     * will not be manipulated.
+     * @param base Base for each component
+     * @return New vector
+     */
+    public ElementVector powInBase(ElementPowPreProcessing base) {
+        Element[] newVector = new Element[dimension];
+        for(int i = 0; i < dimension; i++){
+            newVector[i] = base.powZn(vector[i]);
+        }
+        return new ElementVector(newVector);
     }
 
     /**

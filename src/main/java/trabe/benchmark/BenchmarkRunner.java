@@ -11,7 +11,7 @@ public class BenchmarkRunner {
 	public static void main(String[] args) throws IOException {
 		runBenchmark(new CpabeKeygenAttributeNumberTest(), new File("bench_CpabeKeygenAttributeNumberTest.log"));
 		runBenchmark(new CpabeEncryptionAttributeNumberTest(), new File("bench_CpabeEncryptionAttributeNumberTest.log"));
-//        runBenchmark(new CpabeKeygenAttributeNumberTest(), new File("bench_CpabeKeygenAttributeNumberTest_2.log"));
+        runBenchmark(new CpabeKeygenAttributeNumberTest(), new File("bench_CpabeKeygenAttributeNumberTest_2.log"));
 		runBenchmark(new CpabeDecryptionOrAttributeNumberTest(), new File("bench_CpabeDecryptionOrAttributeNumberTest.log"));
 		runBenchmark(new CpabeDecryptionAndAttributeNumberTest(), new File("bench_CpabeDecryptionAndAttributeNumberTest.log"));
 	}

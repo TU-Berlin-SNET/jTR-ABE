@@ -1,8 +1,11 @@
 package trabe.lw14;
 
+import it.unisa.dia.gas.jpbc.ElementPowPreProcessing;
+import it.unisa.dia.gas.jpbc.PairingPreProcessing;
 import trabe.*;
 import trabe.lw14.policy.LsssMatrix;
 import trabe.lw14.policy.Lw14PolicyAbstractNode;
+import trabe.lw14.policy.Lw14TreePreprocessing;
 import trabe.matrixElimination.ElementField;
 import trabe.matrixElimination.Matrix;
 import trabe.policy.PolicyParsing;
@@ -71,6 +74,12 @@ public class Lw14 {
         Element[] Z_i = new Element[usersSqrt];
         Element[] H_j = new Element[usersSqrt];
 
+        boolean usePreprocessing = AbeSettings.PREPROCESSING && usersSqrt >= AbeSettings.PREPROCESSING_THRESHOLD/3.0;
+
+        ElementPowPreProcessing eppp_g = null;
+        if (usePreprocessing) {
+            eppp_g = g.duplicate().getElementPowPreProcessing();
+        }
         for(int i = 0; i < usersSqrt; i++){
             f_j[i] = p.getG1().newRandomElement();
             alpha_i[i] = p.getZr().newRandomElement();
@@ -79,9 +88,16 @@ public class Lw14 {
             c_j[i] = p.getZr().newRandomElement();
 
             E_i[i] = p.pairing(g, g).powZn(alpha_i[i]);
-            G_i[i] = g.duplicate().powZn(r_i[i]);
-            Z_i[i] = g.duplicate().powZn(z);
-            H_j[i] = g.duplicate().powZn(c_j[i]);
+
+            if (usePreprocessing) {
+                G_i[i] = eppp_g.powZn(r_i[i]);
+                Z_i[i] = eppp_g.powZn(z);
+                H_j[i] = eppp_g.powZn(c_j[i]);
+            } else {
+                G_i[i] = g.duplicate().powZn(r_i[i]);
+                Z_i[i] = g.duplicate().powZn(z);
+                H_j[i] = g.duplicate().powZn(c_j[i]);
+            }
         }
 
         pub.setElements(g, h, f, f_j, G, H, E_i, G_i, Z_i, H_j);
@@ -158,12 +174,25 @@ public class Lw14 {
         ArrayList<Lw14PrivateKeyComponent> components = new ArrayList<Lw14PrivateKeyComponent>(attributes.length);
         AbePublicKey pub = msk.getPublicKey();
         Pairing p = pub.getPairing();
+
+        boolean usePreprocessing = AbeSettings.PREPROCESSING && attributes.length >= AbeSettings.PREPROCESSING_THRESHOLD;
+
+        ElementPowPreProcessing eppp_g = null;
+        if (usePreprocessing) {
+            eppp_g = pub.g.getElementPowPreProcessing();
+        }
+        Element G_pow_minus_sigma = pub.G.duplicate().powZn(sigma).invert();
         for(String attribute : attributes) {
             Element delta =  p.getZr().newRandomElement();
             Element x = Lw14Util.elementZrFromString(attribute, pub);
-            Element k1_ijx = pub.g.duplicate().powZn(delta);
+            Element k1_ijx;
+            if (usePreprocessing) {
+                k1_ijx = eppp_g.powZn(delta);
+            } else {
+                k1_ijx = pub.g.duplicate().powZn(delta);
+            }
             Element k2_ijx = pub.H.duplicate().powZn(x).mul(pub.h).powZn(delta)
-                    .mul(pub.G.duplicate().powZn(sigma).invert());
+                    .mul(G_pow_minus_sigma);
             components.add(new Lw14PrivateKeyComponent(attribute, x, k1_ijx, k2_ijx));
         }
         return components;
@@ -207,7 +236,8 @@ public class Lw14 {
      */
     public static Pair<CipherText, Element> encrypt(AbePublicKey pub, String policy,
                                                     int[] revokedUserIndexes, int userIndex)
-            throws AbeEncryptionException {
+            throws AbeEncryptionException
+    {
         Pairing p = pub.getPairing();
 
         String parsedPolicy = null;
@@ -231,6 +261,8 @@ public class Lw14 {
             }
         }
 
+        boolean usePreprocessingPowG = AbeSettings.PREPROCESSING;
+        boolean usePreprocessingOnAttributeAmount = AbeSettings.PREPROCESSING && !AbeSettings.USE_TREE && accessStructure.getAttributes() >= AbeSettings.PREPROCESSING_THRESHOLD;
 
         AbeUserIndex ui = new AbeUserIndex(pub.getSqrtUsers(), userIndex);
         int i_bar = ui.i;
@@ -286,46 +318,66 @@ public class Lw14 {
         Element[] T_i = new Element[pub.getSqrtUsers()];
         Element pi = p.getZr().newRandomElement();
 
+        ElementPowPreProcessing eppp_g = null;
+        if (usePreprocessingPowG) {
+            eppp_g = pub.g.getElementPowPreProcessing();
+        }
+
+        Element f_pow_pi = pub.f.duplicate().powZn(pi);
+
         // iterate over rows
         for(int i = 0; i < pub.getSqrtUsers(); i++) {
+            Element f_temp = pub.f.duplicate();
+            for(int j = 0; j < pub.getSqrtUsers(); j++) {
+                AbeUserIndex tempUserIndex = new AbeUserIndex(i, j, pub.getSqrtUsers());
+                if (Arrays.binarySearch(revokedUserIndexes, tempUserIndex.counter) < 0) {
+                    f_temp = f_temp.mul(pub.f_j[j]); // assignment is not necessary
+                }
+            }
+
             if (i < i_bar) {
                 s_hat_i[i] = p.getZr().newRandomElement();
-                R1_i[i] = v_i[i].powInBase(pub.g);
-                R2_i[i] = v_i[i].powInBase(pub.g.duplicate().powZn(kappa));
-                Q1_i[i] = pub.g.duplicate().powZn(s_i[i]);
 
-                Element f_temp = pub.f.duplicate();
-                for(int j = 0; j < pub.getSqrtUsers(); j++) {
-                    AbeUserIndex tempUserIndex = new AbeUserIndex(i, j, pub.getSqrtUsers());
-                    if (Arrays.binarySearch(revokedUserIndexes, tempUserIndex.counter) < 0) {
-                        f_temp = f_temp.mul(pub.f_j[j]); // assignment is not necessary
-                    }
+                if (usePreprocessingPowG) {
+                    R1_i[i] = v_i[i].powInBase(eppp_g);
+                    R2_i[i] = v_i[i].powInBase(eppp_g.powZn(kappa));
+                    Q1_i[i] = eppp_g.powZn(s_i[i]);
+                } else {
+                    R1_i[i] = v_i[i].powInBase(pub.g);
+                    R2_i[i] = v_i[i].powInBase(pub.g.duplicate().powZn(kappa));
+                    Q1_i[i] = pub.g.duplicate().powZn(s_i[i]);
                 }
+
                 Q2_i[i] = f_temp.powZn(s_i[i])
                         .mul(pub.Z_i[i].duplicate().powZn(t_i[i]))
-                        .mul(pub.f.duplicate().powZn(pi));
+                        .mul(f_pow_pi);
 
-                Q3_i[i] = pub.g.duplicate().powZn(t_i[i]);
+                if (usePreprocessingPowG) {
+                    Q3_i[i] = eppp_g.powZn(t_i[i]);
+                } else {
+                    Q3_i[i] = pub.g.duplicate().powZn(t_i[i]);
+                }
                 T_i[i] = pub.E_i[i].duplicate().powZn(s_hat_i[i]);
             } else {
                 Element t_s_vi_vc = v.duplicate().scalar(v_i[i]).mul(s_i[i]).mul(tau);
 
                 R1_i[i] = v_i[i].powInBase(pub.G_i[i].duplicate().powZn(s_i[i]));
                 R2_i[i] = v_i[i].powInBase(pub.G_i[i].duplicate().powZn(s_i[i].duplicate().mul(kappa)));
-                Q1_i[i] = pub.g.duplicate().powZn(t_s_vi_vc);
-
-                Element f_temp = pub.f.duplicate();
-                for(int j = 0; j < pub.getSqrtUsers(); j++) {
-                    AbeUserIndex tempUserIndex = new AbeUserIndex(i, j, pub.getSqrtUsers());
-                    if (Arrays.binarySearch(revokedUserIndexes, tempUserIndex.counter) < 0) {
-                        f_temp = f_temp.mul(pub.f_j[j]); // assignment is not necessary
-                    }
+                if (usePreprocessingPowG) {
+                    Q1_i[i] = eppp_g.powZn(t_s_vi_vc);
+                } else {
+                    Q1_i[i] = pub.g.duplicate().powZn(t_s_vi_vc);
                 }
+
                 Q2_i[i] = f_temp.powZn(t_s_vi_vc)
                         .mul(pub.Z_i[i].duplicate().powZn(t_i[i]))
-                        .mul(pub.f.duplicate().powZn(pi));
+                        .mul(f_pow_pi);
 
-                Q3_i[i] = pub.g.duplicate().powZn(t_i[i]);
+                if (usePreprocessingPowG) {
+                    Q3_i[i] = eppp_g.powZn(t_i[i]);
+                } else {
+                    Q3_i[i] = pub.g.duplicate().powZn(t_i[i]);
+                }
                 T_i[i] = pub.E_i[i].duplicate().powZn(t_s_vi_vc).mul(message);
             }
         }
@@ -336,13 +388,17 @@ public class Lw14 {
         for(int j = 0; j < pub.getSqrtUsers(); j++) {
             if (j < j_bar) {
                 Element mu = p.getZr().newRandomElement();
-                C1_j[j] = x3.duplicate().mul(mu).add(v).powInBase(pub.H_j[j].duplicate().powZn(tau))
-                        .mul(w_j[j].powInBase(pub.g.duplicate().powZn(kappa)));
+                C1_j[j] = x3.duplicate().mul(mu).add(v).powInBase(pub.H_j[j].duplicate().powZn(tau));
             } else {
-                C1_j[j] = v.powInBase(pub.H_j[j].duplicate().powZn(tau))
-                        .mul(w_j[j].powInBase(pub.g.duplicate().powZn(kappa)));
+                C1_j[j] = v.powInBase(pub.H_j[j].duplicate().powZn(tau));
             }
-            C2_j[j] = w_j[j].powInBase(pub.g);
+            if (usePreprocessingPowG) {
+                C1_j[j] = C1_j[j].mul(w_j[j].powInBase(eppp_g.powZn(kappa)));
+                C2_j[j] = w_j[j].powInBase(eppp_g);
+            } else {
+                C1_j[j] = C1_j[j].mul(w_j[j].powInBase(pub.g.duplicate().powZn(kappa)));
+                C2_j[j] = w_j[j].powInBase(pub.g);
+            }
         }
 
         CipherText ct;
@@ -354,17 +410,39 @@ public class Lw14 {
             ElementVector u = new ElementVector(n, p.getZr());
             u.set(0, pi);
 
+            ElementPowPreProcessing eppp_f = null;
+            ElementPowPreProcessing eppp_G = null;
+            ElementPowPreProcessing eppp_H = null;
+            if (usePreprocessingOnAttributeAmount) {
+                eppp_f = pub.f.getElementPowPreProcessing();
+                eppp_G = pub.G.getElementPowPreProcessing();
+                eppp_H = pub.H.getElementPowPreProcessing();
+            }
+
             Element[] P1_k = new Element[l];
             Element[] P2_k = new Element[l];
             Element[] P3_k = new Element[l];
             // iterate over attributes
             for(int k = 0; k < l; k++) {
                 ElementVector A_k = accessStructure.getAttributeRow(k, p.getZr());
-                P1_k[k] = pub.f.duplicate().powZn(A_k.scalar(u))
-                        .mul(pub.G.duplicate().powZn(e.get(k)));
-                P2_k[k] = pub.H.duplicate().powZn(accessStructure.getHashedAttribute(k))
-                        .mul(pub.h).powZn(e.get(k).duplicate().negate());
-                P3_k[k] = pub.g.duplicate().powZn(e.get(k));
+
+                if (usePreprocessingOnAttributeAmount) {
+                    P1_k[k] = eppp_f.powZn(A_k.scalar(u))
+                            .mul(eppp_G.powZn(e.get(k)));
+                    P2_k[k] = eppp_H.powZn(accessStructure.getHashedAttribute(k))
+                            .mul(pub.h).powZn(e.get(k).duplicate().negate());
+                } else {
+                    P1_k[k] = pub.f.duplicate().powZn(A_k.scalar(u))
+                            .mul(pub.G.duplicate().powZn(e.get(k)));
+                    P2_k[k] = pub.H.duplicate().powZn(accessStructure.getHashedAttribute(k))
+                            .mul(pub.h).powZn(e.get(k).duplicate().negate());
+                }
+
+                if (usePreprocessingPowG) {
+                    P3_k[k] = eppp_g.powZn(e.get(k));
+                } else {
+                    P3_k[k] = pub.g.duplicate().powZn(e.get(k));
+                }
             }
 
             ct = new CipherText(accessStructure, R1_i, R2_i, Q1_i, Q2_i, Q3_i, T_i,
@@ -376,7 +454,16 @@ public class Lw14 {
             } catch (ParseException e) {
                 throw new AbeEncryptionException("Couldn't build tree", e);
             }
-            policyTree.fillPolicy(pub, pi);
+
+            if (AbeSettings.PREPROCESSING && policyTree.getMinLeaves() >= AbeSettings.PREPROCESSING_THRESHOLD) {
+                if (eppp_g == null) {
+                    eppp_g = pub.g.getElementPowPreProcessing();
+                }
+                policyTree.fillPolicy(pub, pi, new Lw14TreePreprocessing(pub.f.getElementPowPreProcessing(), eppp_g,
+                        pub.G.getElementPowPreProcessing(), pub.H.getElementPowPreProcessing()));
+            } else {
+                policyTree.fillPolicy(pub, pi);
+            }
 
             ct = new CipherText(policyTree, R1_i, R2_i, Q1_i, Q2_i, Q3_i, T_i,
                     C1_j, C2_j, null, revokedUserIndexes);
@@ -512,6 +599,8 @@ public class Lw14 {
 
 //        System.out.println("w_k: " + w_k);
 
+            PairingPreProcessing pp = p.getPairingPreProcessingFromElement(privateKey.k2_ij);
+
             // step 1
             for(int k = 0; k < minSize; k++) {
                 String attribute = attributeList.get(k);
@@ -522,7 +611,14 @@ public class Lw14 {
                 if (component == null) {
                     throw new AbeDecryptionException("Attribute '" + attribute +"' not found in private key");
                 }
-                D_P = D_P.mul(p.pairing(privateKey.k2_ij, cipher.p1[attrRow])
+
+                Element c;
+                if (AbeSettings.PREPROCESSING) {
+                    c = pp.pairing(cipher.p1[attrRow]);
+                } else {
+                    c = p.pairing(privateKey.k2_ij, cipher.p1[attrRow]);
+                }
+                D_P = D_P.mul(c
                         .mul(p.pairing(component.k1_ijx, cipher.p2[attrRow]))
                         .mul(p.pairing(component.k2_ijx, cipher.p3[attrRow])))
                         .powZn(w_k.get(k));
@@ -534,7 +630,12 @@ public class Lw14 {
                 throw new AbeDecryptionException("Private key doesn't satisfy the threshold formula");
             }
             cipher.accessTree.pickSatisfyMinLeaves(privateKey);
-            cipher.accessTree.decFlatten(D_P, privateKey);
+
+            if (AbeSettings.PREPROCESSING && cipher.accessTree.getMinLeaves() >= AbeSettings.PREPROCESSING_THRESHOLD) {
+                cipher.accessTree.decFlatten(D_P, privateKey);
+            } else {
+                cipher.accessTree.decFlatten(D_P, privateKey);
+            }
         }
 
         // Create an int

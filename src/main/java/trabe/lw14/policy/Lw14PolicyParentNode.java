@@ -59,6 +59,16 @@ public class Lw14PolicyParentNode extends Lw14PolicyAbstractNode {
         }
     }
 
+    @Override
+    public void fillPolicy(AbePublicKey pub, Element e, Lw14TreePreprocessing tpp) {
+        poly = Lw14Polynomial.createRandom(getThreshold() - 1, e);
+        for (int i = 0; i < children.size(); i++) {
+            Element r = pub.getPairing().getZr().newElement(i + 1);
+            Element t = evalPoly(poly, r);
+            children.get(i).fillPolicy(pub, t, tpp);
+        }
+    }
+
     private static Element evalPoly(Lw14Polynomial q, Element x) {
         Element r = x.duplicate().setToZero();
         Element t = x.duplicate().setToOne();

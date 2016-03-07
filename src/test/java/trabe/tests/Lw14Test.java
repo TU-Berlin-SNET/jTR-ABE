@@ -688,22 +688,6 @@ public class Lw14Test {
         String smallerPolicy = "someNumber < " + number;
         String smallerEqPolicy = "someNumber <= " + number;
 
-        // each AbeEncrypted can only be decrypted once, since we advance the stream to after the AES data.
-        AbeEncrypted greaterEncryptedTest1 = Cpabe.encrypt(pubKey, greaterPolicy, data);
-        AbeEncrypted greaterEqEncryptedTest1 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
-        AbeEncrypted smallerEncryptedTest1 = Cpabe.encrypt(pubKey, smallerPolicy, data);
-        AbeEncrypted smallerEqEncryptedTest1 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
-        
-        AbeEncrypted greaterEncryptedTest2 = Cpabe.encrypt(pubKey, greaterPolicy, data);
-        AbeEncrypted greaterEqEncryptedTest2 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
-        AbeEncrypted smallerEncryptedTest2 = Cpabe.encrypt(pubKey, smallerPolicy, data);
-        AbeEncrypted smallerEqEncryptedTest2 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
-        
-        AbeEncrypted greaterEncryptedTest3 = Cpabe.encrypt(pubKey, greaterPolicy, data);
-        AbeEncrypted greaterEqEncryptedTest3 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
-        AbeEncrypted smallerEncryptedTest3 = Cpabe.encrypt(pubKey, smallerPolicy, data);
-        AbeEncrypted smallerEqEncryptedTest3 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
-
         String greaterAttribute = "someNumber = " + Integer.toString(number + 1);
         String smallerAttribute = "someNumber = " + Integer.toString(number - 1);
         String equalAttribute = "someNumber = " + Integer.toString(number);
@@ -712,17 +696,33 @@ public class Lw14Test {
         AbePrivateKey smallerKey = Cpabe.keygenSingle(smKey, smallerAttribute);
         AbePrivateKey equalKey = Cpabe.keygenSingle(smKey, equalAttribute);
 
+        // each AbeEncrypted can only be decrypted once, since we advance the stream to after the AES data.
+        AbeEncrypted greaterEncryptedTest1 = Cpabe.encrypt(pubKey, greaterPolicy, data);
+        AbeEncrypted greaterEqEncryptedTest1 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
+        AbeEncrypted smallerEncryptedTest1 = Cpabe.encrypt(pubKey, smallerPolicy, data);
+        AbeEncrypted smallerEqEncryptedTest1 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
+
         // greaterKey
         assertTrue(Arrays.equals(data, decrypt(greaterKey, greaterEncryptedTest1)));
         assertTrue(Arrays.equals(data, decrypt(greaterKey, greaterEqEncryptedTest1)));
         assertFalse(Arrays.equals(data, decrypt(greaterKey, smallerEncryptedTest1)));
         assertFalse(Arrays.equals(data, decrypt(greaterKey, smallerEqEncryptedTest1)));
 
+        AbeEncrypted greaterEncryptedTest2 = Cpabe.encrypt(pubKey, greaterPolicy, data);
+        AbeEncrypted greaterEqEncryptedTest2 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
+        AbeEncrypted smallerEncryptedTest2 = Cpabe.encrypt(pubKey, smallerPolicy, data);
+        AbeEncrypted smallerEqEncryptedTest2 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
+
         // smallerKey
         assertFalse(Arrays.equals(data, decrypt(smallerKey, greaterEncryptedTest2)));
         assertFalse(Arrays.equals(data, decrypt(smallerKey, greaterEqEncryptedTest2)));
         assertTrue(Arrays.equals(data, decrypt(smallerKey, smallerEncryptedTest2)));
         assertTrue(Arrays.equals(data, decrypt(smallerKey, smallerEqEncryptedTest2)));
+
+        AbeEncrypted greaterEncryptedTest3 = Cpabe.encrypt(pubKey, greaterPolicy, data);
+        AbeEncrypted greaterEqEncryptedTest3 = Cpabe.encrypt(pubKey, greaterEqPolicy, data);
+        AbeEncrypted smallerEncryptedTest3 = Cpabe.encrypt(pubKey, smallerPolicy, data);
+        AbeEncrypted smallerEqEncryptedTest3 = Cpabe.encrypt(pubKey, smallerEqPolicy, data);
 
         // equalKey
         assertFalse(Arrays.equals(data, decrypt(equalKey, greaterEncryptedTest3)));

@@ -2,10 +2,12 @@ package trabe.lw14.policy;
 
 import java.io.IOException;
 
+import it.unisa.dia.gas.jpbc.ElementPowPreProcessing;
 import it.unisa.dia.gas.jpbc.Pairing;
 import trabe.AbeOutputStream;
 import trabe.AbePrivateKey;
 import trabe.AbePublicKey;
+import trabe.AbeSettings;
 import trabe.lw14.Lw14PrivateKeyComponent;
 import trabe.lw14.Lw14Util;
 import it.unisa.dia.gas.jpbc.Element;
@@ -66,6 +68,17 @@ public class Lw14PolicyLeafNode extends Lw14PolicyAbstractNode {
     }
 
     @Override
+    public void fillPolicy(AbePublicKey pub, Element e, Lw14TreePreprocessing tpp) {
+        Element b = pub.getPairing().getZr().newRandomElement();
+
+        p1 = tpp.eppp_f.powZn(e)
+                .mul(tpp.eppp_G.powZn(b));
+        p2 = tpp.eppp_H.powZn(hashedAttribute)
+                .mul(pub.h).powZn(b.duplicate().negate());
+        p3 = tpp.eppp_g.powZn(b);
+    }
+
+    @Override
     protected boolean checkSatisfySpecific(AbePrivateKey prv) {
     	satisfyingComponent = prv.getSatisfyingComponent(getHashedAttribute());
     	return satisfyingComponent != null;
@@ -79,8 +92,16 @@ public class Lw14PolicyLeafNode extends Lw14PolicyAbstractNode {
     @Override
     protected void decFlattenSpecific(Element r, Element exp, AbePrivateKey prv) {
         Pairing p = prv.getPublicKey().getPairing();
-        r.mul(p.pairing(prv.k2_ij, p1)
-                .mul(p.pairing(satisfyingComponent.k1_ijx, p2))
+        Element c = null;
+        if (AbeSettings.PREPROCESSING) {
+            if (prv.k2_ij_pp == null) {
+                prv.k2_ij_pp = p.getPairingPreProcessingFromElement(prv.k2_ij);
+            }
+            c = prv.k2_ij_pp.pairing(p1);
+        } else {
+            c = p.pairing(prv.k2_ij, p1);
+        }
+        r.mul(c.mul(p.pairing(satisfyingComponent.k1_ijx, p2))
                 .mul(p.pairing(satisfyingComponent.k2_ijx, p3))
                 .powZn(exp));
     }
