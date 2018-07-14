@@ -32,7 +32,12 @@ public class MockBlackBox extends DecryptionBlackBox {
     public byte[] decrypt(AbeEncrypted ct) {
         for(AbePrivateKey key : userKeys) {
             try {
+                String privKeyAttrs = "";
+                for (String privKeyAttr : key.getAttributeSet()) {
+                    privKeyAttrs += privKeyAttr + " ";
+                }
                 if (Lw14.canDecrypt(key, ct.getCipher())) {
+                    System.out.println(privKeyAttrs + " [" + key.position.counter + "] [" + key.position.i + " , "+ key.position.j + "] can decrypt policy: " + ct.getCipher().policy);
                     return Cpabe.decrypt(key, ct);
                 }
             } catch (Exception ignored) {

@@ -355,7 +355,7 @@ public class Lw14 {
             // factors for x1 and x2 to create a vector in span{x1, x2}
             Element c1 = p.getZr().newRandomElement();
             Element c2 = p.getZr().newRandomElement();
-            v_i[i] = x1.powInBase(c1).add(x2.powInBase(c2));
+            v_i[i] = x1.duplicate().mul(c1).add(x2.duplicate().mul(c2));
         }
 
 
