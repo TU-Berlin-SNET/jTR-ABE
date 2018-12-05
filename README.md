@@ -2,6 +2,7 @@
 Traceable and Revocable Attribute-based Encryption in Java
 
 This software package implements an ABE scheme by Liu and Wong: [Practical Attribute-Based Encryption: Traitor Tracing, Revocation, and Large Universe](http://eprint.iacr.org/2014/616). The flavor is Ciphertext-Policy (CP-ABE).
+The implementation supports non-monotonic access structures (AC), which is not part this scheme. We borrow techniques from Yamada et al. (http://eprint.iacr.org/2014/181) to achieve this property.
 
 #### Notes
 

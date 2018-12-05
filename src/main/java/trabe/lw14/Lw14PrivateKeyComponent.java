@@ -17,13 +17,18 @@ public class Lw14PrivateKeyComponent {
     /** G_1 **/
     public Element k2_ijx;
 
+    public Element k1Tilde_ijx;
+    public Element k2Tilde_ijx;
+
     private Lw14PrivateKeyComponent(){}
 
-    public Lw14PrivateKeyComponent(String attribute, Element hashedAttributeZr, Element k1_ijx, Element k2_ijx) {
+    public Lw14PrivateKeyComponent(String attribute, Element hashedAttributeZr, Element k1_ijx, Element k2_ijx, Element k1Tilde_ijx, Element k2Tilde_ijx) {
         this.attribute = attribute;
         this.hashedAttributeZr = hashedAttributeZr;
         this.k1_ijx = k1_ijx;
         this.k2_ijx = k2_ijx;
+        this.k1Tilde_ijx = k1Tilde_ijx;
+        this.k2Tilde_ijx = k2Tilde_ijx;
     }
 
     public void writeToStream(AbeOutputStream stream) throws IOException {

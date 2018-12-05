@@ -8,6 +8,21 @@
 	<version>1.0.0-SNAPSHOT</version>
 
 	<name>trabe</name>
+	<repositories>
+		<repository>
+			<id>maven-restlet</id>
+			<name>Restlet repository</name>
+			<url>http://maven.restlet.com</url>
+		</repository>
+		<repository>
+			<id>SNET butyeboi</id>
+			<!-- <url>http://www.user.tu-berlin.de/butyeboi/mvn/public</url> -->
+			<url>http://www.user.tu-berlin.de/thatmann/mvn/public</url>
+			<releases>
+				<updatePolicy>always</updatePolicy>
+			</releases>
+		</repository>
+	</repositories>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -38,7 +38,8 @@ public class AbePublicKey {
     public Element[] Z_i;
     /** [G_1] **/
     public Element[] H_j;
-
+    /** [G'] **/
+    public Element Gquote;
     /**
      * Creates a new AbePublicKey. This key should only be used after the elements have been set (setElements).
      * 
@@ -66,7 +67,7 @@ public class AbePublicKey {
 
     public void setElements(Element g, Element h, Element f, Element[] f_j,
                             Element G, Element H, Element[] E_i, Element[] G_i,
-                            Element[] Z_i, Element[] H_j) {
+                            Element[] Z_i, Element[] H_j, Element Gquote) {
         this.g = g;
         this.h = h;
         this.f = f;
@@ -77,6 +78,7 @@ public class AbePublicKey {
         this.G_i = G_i;
         this.Z_i = Z_i;
         this.H_j = H_j;
+        this.Gquote = Gquote;
     }
 
     public static AbePublicKey readFromFile(File file) throws IOException {

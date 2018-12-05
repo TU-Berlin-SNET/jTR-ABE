@@ -16,6 +16,7 @@ import trabe.lw14.Lw14Util;
  * A master secret key
  */
 public class AbeSecretMasterKey {
+
     private static final int SERIALIZE_VERSION = 1;
 
     private final AbePublicKey pubKey;
@@ -25,6 +26,8 @@ public class AbeSecretMasterKey {
     public final Element[] r_i;
     /** [Zr] **/
     public final Element[] c_j;
+
+    public final Element b;
 
     public int counter;
 
@@ -36,15 +39,16 @@ public class AbeSecretMasterKey {
         return getSqrtUsers() * getSqrtUsers() - 1;
     }
 
-    public AbeSecretMasterKey(AbePublicKey pubKey, Element[] alpha_i, Element[] r_i, Element[] c_j) {
-        this(pubKey, alpha_i, r_i, c_j, 0);
+    public AbeSecretMasterKey(AbePublicKey pubKey, Element[] alpha_i, Element[] r_i, Element[] c_j, Element b) {
+        this(pubKey, alpha_i, r_i, c_j, b, 0);
     }
 
-    public AbeSecretMasterKey(AbePublicKey pubKey, Element[] alpha_i, Element[] r_i, Element[] c_j, int counter) {
+    public AbeSecretMasterKey(AbePublicKey pubKey, Element[] alpha_i, Element[] r_i, Element[] c_j, Element b, int counter) {
         this.pubKey = pubKey;
         this.alpha_i = alpha_i;
         this.r_i = r_i;
         this.c_j = c_j;
+        this.b = b;
         this.counter = counter;
     }
     
@@ -61,7 +65,7 @@ public class AbeSecretMasterKey {
         Element[] r_i = Lw14Util.readElementArray(usersSqrt, stream);
         Element[] c_j = Lw14Util.readElementArray(usersSqrt, stream);
 
-        return new AbeSecretMasterKey(pubKey, alpha_i, r_i, c_j, counter);
+        return new AbeSecretMasterKey(pubKey, alpha_i, r_i, c_j, null, counter);
     }
 
     public static AbeSecretMasterKey readFromFile(File file) throws IOException {

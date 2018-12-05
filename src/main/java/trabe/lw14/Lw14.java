@@ -11,7 +11,10 @@ import trabe.matrixElimination.Matrix;
 import trabe.policy.PolicyParsing;
 import trabe.policyparser.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Pairing;
@@ -58,21 +61,25 @@ public class Lw14 {
         AbePublicKey pub = new AbePublicKey(AbeSettings.curveParams);
         Pairing p = pub.getPairing();
 
-        Element g = p.getG1().newRandomElement();
-        Element h = p.getG1().newRandomElement();
-        Element f = p.getG1().newRandomElement();
-        Element G = p.getG1().newRandomElement();
-        Element H = p.getG1().newRandomElement();
+        final Element g = p.getG1().newRandomElement();
+        final Element h = p.getG1().newRandomElement();
+        final Element f = p.getG1().newRandomElement();
+        final Element G = p.getG1().newRandomElement();
+        final Element H = p.getG1().newRandomElement();
 
-        Element[] f_j = new Element[usersSqrt];
-        Element[] alpha_i = new Element[usersSqrt];
-        Element[] r_i = new Element[usersSqrt];
-        Element[] c_j = new Element[usersSqrt];
+        final Element[] f_j = new Element[usersSqrt];
+        final Element[] alpha_i = new Element[usersSqrt];
+        final Element[] r_i = new Element[usersSqrt];
+        final Element[] c_j = new Element[usersSqrt];
 
-        Element[] E_i = new Element[usersSqrt];
-        Element[] G_i = new Element[usersSqrt];
-        Element[] Z_i = new Element[usersSqrt];
-        Element[] H_j = new Element[usersSqrt];
+        final Element[] E_i = new Element[usersSqrt];
+        final Element[] G_i = new Element[usersSqrt];
+        final Element[] Z_i = new Element[usersSqrt];
+        final Element[] H_j = new Element[usersSqrt];
+
+        // non-monotonic access structure extension 
+        final Element b = p.getZr().newRandomElement();
+        final Element Gquote = H.duplicate().powZn(b);
 
         boolean usePreprocessing = AbeSettings.PREPROCESSING && usersSqrt >= AbeSettings.PREPROCESSING_THRESHOLD/3.0;
 
@@ -100,8 +107,8 @@ public class Lw14 {
             }
         }
 
-        pub.setElements(g, h, f, f_j, G, H, E_i, G_i, Z_i, H_j);
-        return new AbeSecretMasterKey(pub, alpha_i, r_i, c_j);
+        pub.setElements(g, h, f, f_j, G, H, E_i, G_i, Z_i, H_j, Gquote);
+        return new AbeSecretMasterKey(pub, alpha_i, r_i, c_j, b);
     }
 
     /**
@@ -181,8 +188,50 @@ public class Lw14 {
         if (usePreprocessing) {
             eppp_g = pub.g.getElementPowPreProcessing();
         }
+        List<Element> allOfDeltaQuotes = new ArrayList<Element>();
+        Element deltaQuoteIjxCumulative = sigma.duplicate();
         Element G_pow_minus_sigma = pub.G.duplicate().powZn(sigma).invert();
-        for(String attribute : attributes) {
+        
+        for (int i = 0; i < attributes.length; i++) {
+            final Element deltaIjx = p.getZr().newRandomElement();
+            Element deltaQuoteIjx;
+            if (i == attributes.length - 1) {
+                deltaQuoteIjx = deltaQuoteIjxCumulative;
+            } else {
+                deltaQuoteIjx = p.getZr().newRandomElement();
+                deltaQuoteIjxCumulative = deltaQuoteIjxCumulative.duplicate().sub(deltaQuoteIjx);
+            }
+            allOfDeltaQuotes.add(deltaQuoteIjx);
+            final Element x = Lw14Util.elementZrFromString(attributes[i], pub);
+            Element k1_ijx;
+            if (usePreprocessing) {
+                k1_ijx = eppp_g.powZn(deltaIjx);
+            } else {
+                k1_ijx = pub.g.duplicate().powZn(deltaIjx);
+            }
+            final Element k2_ijx = pub.H.duplicate().powZn(x).mul(pub.h).powZn(deltaIjx).mul(G_pow_minus_sigma);
+            Element k1Tilde_ijx = pub.g.duplicate().powZn(msk.b.duplicate().mul(deltaQuoteIjx));
+            Element k2Tilde_ijx = pub.Gquote.duplicate().powZn(x).mul(pub.h.duplicate().powZn(msk.b))
+                    .powZn(deltaQuoteIjx);
+            components
+                    .add(new Lw14PrivateKeyComponent(attributes[i], x, k1_ijx, k2_ijx, k1Tilde_ijx, k2Tilde_ijx));
+        }
+        Element shouldBeSigma = null;
+        for (Element deltaQuoteIjx : allOfDeltaQuotes) {
+            if (shouldBeSigma == null) {
+                shouldBeSigma = deltaQuoteIjx;
+            } else {
+                shouldBeSigma = shouldBeSigma.add(deltaQuoteIjx);
+            }
+        }
+        if (shouldBeSigma.equals(sigma)) {
+            System.out.println("NICE! Delta quotes sum up to sigma");
+        } else {
+            System.err.println("ERROR! Delta quotes didn't sum up to sigma");
+            throw new IllegalStateException("ERROR! Delta quotes didn't sum up to sigma");
+        }
+
+       /* for(String attribute : attributes) {
             Element delta =  p.getZr().newRandomElement();
             Element x = Lw14Util.elementZrFromString(attribute, pub);
             Element k1_ijx;
@@ -194,7 +243,8 @@ public class Lw14 {
             Element k2_ijx = pub.H.duplicate().powZn(x).mul(pub.h).powZn(delta)
                     .mul(G_pow_minus_sigma);
             components.add(new Lw14PrivateKeyComponent(attribute, x, k1_ijx, k2_ijx));
-        }
+        }*/
+
         return components;
     }
 
@@ -305,7 +355,7 @@ public class Lw14 {
             // factors for x1 and x2 to create a vector in span{x1, x2}
             Element c1 = p.getZr().newRandomElement();
             Element c2 = p.getZr().newRandomElement();
-            v_i[i] = x1.powInBase(c1).add(x2.powInBase(c2));
+            v_i[i] = x1.duplicate().mul(c1).add(x2.duplicate().mul(c2));
         }
 
 
@@ -427,24 +477,25 @@ public class Lw14 {
                 ElementVector A_k = accessStructure.getAttributeRow(k, p.getZr());
 
                 if (usePreprocessingOnAttributeAmount) {
-                    P1_k[k] = eppp_f.powZn(A_k.scalar(u))
-                            .mul(eppp_G.powZn(e.get(k)));
-                    P2_k[k] = eppp_H.powZn(accessStructure.getHashedAttribute(k))
-                            .mul(pub.h).powZn(e.get(k).duplicate().negate());
+                    P1_k[k] = eppp_f.powZn(A_k.scalar(u)).mul(eppp_G.powZn(e.get(k)));
+                    P2_k[k] = eppp_H.powZn(accessStructure.getHashedAttribute(k)).mul(pub.h).powZn(e.get(k).duplicate().negate());
                 } else {
-                    P1_k[k] = pub.f.duplicate().powZn(A_k.scalar(u))
-                            .mul(pub.G.duplicate().powZn(e.get(k)));
+                    // check negated attribute
+                    if (!accessStructure.getAttribute(k).startsWith("NOT_")) {
+                        P1_k[k] = pub.f.duplicate().powZn(A_k.scalar(u))
+                                .mul(pub.G.duplicate().powZn(e.get(k)));
+                    } else {
+                        P1_k[k] = pub.f.duplicate().powZn(A_k.scalar(u)).mul(pub.Gquote.duplicate().powZn(e.get(k)));
+                    }
                     P2_k[k] = pub.H.duplicate().powZn(accessStructure.getHashedAttribute(k))
                             .mul(pub.h).powZn(e.get(k).duplicate().negate());
                 }
-
                 if (usePreprocessingPowG) {
                     P3_k[k] = eppp_g.powZn(e.get(k));
                 } else {
                     P3_k[k] = pub.g.duplicate().powZn(e.get(k));
                 }
             }
-
             ct = new CipherText(accessStructure, R1_i, R2_i, Q1_i, Q2_i, Q3_i, T_i,
                     C1_j, C2_j, P1_k, P2_k, P3_k, policy, revokedUserIndexes);
         } else {
@@ -485,6 +536,7 @@ public class Lw14 {
      */
     public static Element decrypt(AbePrivateKey privateKey, CipherText cipher) throws AbeDecryptionException {
         Lw14PolicyAbstractNode root = null;
+        Set<String> allPrivateKeyAttributes = privateKey.getAttributeSet();
         try {
             if (cipher.accessTree != null) {
                 root = cipher.accessTree;
@@ -493,8 +545,22 @@ public class Lw14 {
             } else {
                 root = Lw14Util.getPolicyTree(cipher.policy, privateKey.getPublicKey());
             }
-            if (!Lw14Util.satisfies(root, privateKey)) {
-                return null;
+            if (!cipher.policy.contains("NOT_")) {
+                if (!Lw14Util.satisfies(root, privateKey)) {
+                    return null;
+                }
+            } else {
+                for (String policyAttribute : cipher.accessMatrix.getAttributeList()) {
+                    if (!policyAttribute.contains("NOT_")) {
+                        continue;
+                    }
+                    for (Lw14PrivateKeyComponent privKeyComp : privateKey.getComponents()) {
+                        if (privKeyComp.attribute.equals(policyAttribute.substring(5))) {
+                            return null;
+                        }
+                    }
+                    allPrivateKeyAttributes.add(policyAttribute);
+                }
             }
         } catch(ParseException e) {
             throw new AbeDecryptionException("Policy could not be parsed", e);
@@ -607,10 +673,10 @@ public class Lw14 {
                 int attrRow = cipher.accessMatrix.getAttributeRowIndex(attribute);
 //            System.out.println("k = " + k + " att = " + attribute + " row = " + attrRow);
 
-                Lw14PrivateKeyComponent component = privateKey.getComponent(attribute);
+                /*Lw14PrivateKeyComponent component = privateKey.getComponent(attribute);
                 if (component == null) {
                     throw new AbeDecryptionException("Attribute '" + attribute +"' not found in private key");
-                }
+                }*/
 
                 Element c;
                 if (AbeSettings.PREPROCESSING) {
@@ -618,10 +684,30 @@ public class Lw14 {
                 } else {
                     c = p.pairing(privateKey.k2_ij, cipher.p1[attrRow]);
                 }
-                D_P = D_P.mul(c
-                        .mul(p.pairing(component.k1_ijx, cipher.p2[attrRow]))
-                        .mul(p.pairing(component.k2_ijx, cipher.p3[attrRow])))
-                        .powZn(w_k.get(k));
+                if (!attribute.startsWith("NOT_")) {
+                    final Lw14PrivateKeyComponent component = privateKey.getComponent(attribute);
+                    if (component == null) {
+                        throw new AbeDecryptionException("Attribute '" + attribute + "' not found in private key");
+                    }
+                    D_P = D_P.mul(c.mul(p.pairing(component.k1_ijx, cipher.p2[attrRow]))
+                            .mul(p.pairing(component.k2_ijx, cipher.p3[attrRow]))).powZn(w_k.get(k));
+                } else {
+
+                    Element inner = null;
+                    for (Lw14PrivateKeyComponent component : privateKey.getComponents()) {
+                        Element result = p.pairing(component.k1Tilde_ijx, cipher.p2[attrRow])
+                                .mul(p.pairing(component.k2Tilde_ijx, cipher.p3[attrRow]))
+                                .powZn(cipher.accessMatrix.getHashedAttribute(attrRow).duplicate()
+                                        .sub(component.hashedAttributeZr).invert());
+                        if (inner == null) {
+                            inner = result.duplicate();
+                        } else {
+                            inner = inner.duplicate().mul(result);
+                        }
+                    }
+
+                    D_P = D_P.mul(c.mul(inner)).powZn(w_k.get(k));
+                }
             }
         } else {
             // accessTree
